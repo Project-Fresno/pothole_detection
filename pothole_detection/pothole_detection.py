@@ -15,38 +15,34 @@ import numpy as np
 class imageSubscriber(Node):
     def __init__(self):
 
-        super().__init__('image_subscriber')
+        super().__init__("image_subscriber")
 
         # self.pothole_depth = np.zeros([720,1280], np.uint16)
 
         self.color_sub = self.create_subscription(
-            Image, '/camera/color/image_raw', self.color_callback, 10
-        )   # '/camera/color/image_raw'
+            Image, "/camera/color/image_raw", self.color_callback, 10
+        )  # '/camera/color/image_raw'
 
         self.depth_sub = self.create_subscription(
             Image,
-            '/camera/depth/image_rect_raw',
+            "/camera/depth/image_rect_raw",
             self.depth_callback,
             10,
-        )   # 'camera/depth/image_rect_raw'
+        )  # 'camera/depth/image_rect_raw'
 
         self.info_sub = self.create_subscription(
             CameraInfo,
-            '/camera/depth/camera_info',
+            "/camera/depth/camera_info",
             self.info_callback,
             10,
-        )   # '/camera/depth/camera_info'
+        )  # '/camera/depth/camera_info'
 
         self.br = CvBridge()
-        self.camera_info_pub = self.create_publisher(
-            CameraInfo, '/cov_info', 10
-        )
+        self.camera_info_pub = self.create_publisher(CameraInfo, "/cov_info", 10)
         self.pothole_depth_publisher = self.create_publisher(
-            Image, 'pothole_depth', 10
-        )        # origianlly 'output_depth
-        self.lane_depth_publisher = self.create_publisher(
-            Image, 'lane_depth', 10
-        )
+            Image, "pothole_depth", 10
+        )  # origianlly 'output_depth
+        self.lane_depth_publisher = self.create_publisher(Image, "lane_depth", 10)
 
         # self.new_depth_publisher = self.create_publisher(
         #     Image,
@@ -71,11 +67,11 @@ class imageSubscriber(Node):
         self.camera_info = CameraInfo()
 
         self.pothole_depth = np.zeros((720, 1280), np.uint16)
-        self.lanes = np.zeros((720, 1280), dtype='uint8')
+        self.lanes = np.zeros((720, 1280), dtype="uint8")
         self.lane_depth = np.zeros((720, 1280), np.uint16)
 
     def info_callback(self, data):
-        self.get_logger().info('Receiving camera info')
+        self.get_logger().info("Receiving camera info")
         self.camera_info = data
         # self.camera_info.header.stamp = self.get_clock().now().to_msg()
         # self.camera_info_pub.publish(self.camera_info)
@@ -89,8 +85,8 @@ class imageSubscriber(Node):
         pothole_depth_image.header.stamp = time
         lane_depth_image.header.stamp = time
 
-        pothole_depth_image.header.frame_id = 'camera_link'
-        lane_depth_image.header.frame_id = 'camera_link'
+        pothole_depth_image.header.frame_id = "camera_link"
+        lane_depth_image.header.frame_id = "camera_link"
 
         self.camera_info.header.stamp = time
 
@@ -106,68 +102,29 @@ class imageSubscriber(Node):
         # )
 
     def depth_callback(self, data):
-        self.get_logger().info('Receiving depth frame')
-        self.depth_image = self.br.imgmsg_to_cv2(data, 'passthrough')
+        self.get_logger().info("Receiving depth frame")
+        self.depth_image = self.br.imgmsg_to_cv2(data, "passthrough")
         # cv2.imshow("original depth",self.depth_image)
         # cv2.waitKey(1)
 
     def color_callback(self, data):
-        self.get_logger().info('Receiving color frame')
+        self.get_logger().info("Receiving color frame")
 
-        self.color_image = self.br.imgmsg_to_cv2(data, 'bgr8')
+        self.color_image = self.br.imgmsg_to_cv2(data, "bgr8")
 
-        self.numpy_color_image = np.array(
-            self.color_image
-        )     # used in pcd_processing
-
-        # --------------------------- Perspective Transformation --------------------------------------------------------
-
-        # self.pts2 = np.float32([[640, 180], [1280, 180],
-        #                    [0, 1080], [1920, 1080]])
-
-        # self.pts1 = np.float32([[0, 0], [1920, 0],
-        #                    [0, 1080], [1920, 1080]])
-
-        # self.transformation_matrix = cv2.getPerspectiveTransform(self.pts1, self.pts2)
-
-        # self.transform_result = cv2.warpPerspective(self.gray, self.transformation_matrix, (1920, 1080))
-
-        # --------------------------------------------------------------------------------------------------------------
+        self.numpy_color_image = np.array(self.color_image)  # used in pcd_processing
 
         # --------------------------------- Color Filtering -------------------------------------------------------------
 
         self.hsv = cv2.cvtColor(self.color_image, cv2.COLOR_BGR2HSV)
 
-        self.lower_white_hsv = (0, 0, 159)         # 0,0,200          0,0,168
-        self.upper_white_hsv = (
-            179,
-            26,
-            255,
-        )     # 145,60,255       172,111,255
+        self.lower_white_hsv = (0, 0, 207)  # 0,0,200          0,0,168
+        self.upper_white_hsv = (179, 125, 255)  # 145,60,255       172,111,255
 
-        # self.hsv_color_mask = cv2.inRange(
-        # self.hsv, self.lower_white_hsv, self.upper_white_hsv
-        # )
-        # self.hsv_mask = cv2.bitwise_and(
-        # self.color_image, self.color_image, mask=self.hsv_color_mask
-        # )
+        self.mask = cv2.inRange(self.hsv, self.lower_white_hsv, self.upper_white_hsv)
 
-        # cv2.imshow('hsv', self.hsv_color_mask)
-
-        # --------------------------------------------------------------------------------------------------------------
-
-        # --------------------------------- rectangular region of interest ------------------------------------------------
-
-        # self.mask = np.zeros(self.hsv_color_mask.shape[:2], dtype='uint8')
-        # cv2.rectangle(self.mask, (0, 500), (1280, 720), (255, 0, 0), -1)
-        self.mask = cv2.inRange(
-            self.hsv, self.lower_white_hsv, self.upper_white_hsv
-        )
-        # self.masked_image = cv2.bitwise_and(
-        #     self.hsv_color_mask, self.mask
-        # )     # total mask, HSV + ROI
         self.masked = cv2.bitwise_and(self.hsv, self.hsv, mask=self.mask)
-        cv2.imshow('masked_image', self.masked)
+        cv2.imshow("masked_image", self.masked)
 
         # -----------------------------------------------------------------------------------------------------------------
 
@@ -182,9 +139,7 @@ class imageSubscriber(Node):
 
         self.gray = cv2.cvtColor(self.blurred, cv2.COLOR_RGB2GRAY)
 
-        ret, self.foreground = cv2.threshold(
-            self.gray, 180, 200, cv2.THRESH_OTSU
-        )
+        ret, self.foreground = cv2.threshold(self.gray, 180, 200, cv2.THRESH_OTSU)
 
         self.se = cv2.getStructuringElement(cv2.MORPH_RECT, (11, 11))
 
@@ -192,11 +147,9 @@ class imageSubscriber(Node):
 
         self.out_gray = cv2.divide(self.foreground, self.bg, scale=255)
 
-        self.out_binary = cv2.threshold(
-            self.out_gray, 180, 255, cv2.THRESH_OTSU
-        )[1]
+        self.out_binary = cv2.threshold(self.out_gray, 180, 255, cv2.THRESH_OTSU)[1]
 
-        cv2.imshow('Binary of Everything', self.out_binary)
+        cv2.imshow("Binary of Everything", self.out_binary)
 
         # ------------------------------------------------------------------------------------------------------------------
 
@@ -312,7 +265,9 @@ class imageSubscriber(Node):
         #
         # print('Lanes Found')
         # cv2.imshow('lanes', self.lanes)
+
         self.out_binary[0:400, :] = 0
+
         # cv2.rectangle(self.mask, (0, 500), (1280, 720), (255, 0, 0), -1)
         # self.mask = np.zeros(self.out_binary.shape, dtype=np.uint8)
         # self.roi_corners = np.array(
@@ -323,11 +278,13 @@ class imageSubscriber(Node):
         # )
         # self.mask_bl = cv2.cvtColor(self.mask_bl, cv2.COLOR_RGB2GRAY)
         # self.msk = cv2.bitwise_and(self.mask, self.mask, mask=self.mask_bl)
-        cv2.imshow('mask', self.out_binary)
+
+        cv2.imshow("mask", self.out_binary)
         self.lane_depth = cv2.bitwise_and(
             self.depth_image, self.depth_image, mask=self.out_binary
         )
-        print('Lane Depth Published\n')
+        print("Lane Depth Published\n")
+
         # --------------------------------------------------------------------------------------------------------
 
         cv2.waitKey(1)
@@ -342,7 +299,7 @@ def main(args=None):
     rclpy.spin(image_subscriber)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 # Integration with ROS2 for testing in gazebo simulation
