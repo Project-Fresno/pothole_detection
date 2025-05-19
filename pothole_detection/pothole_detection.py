@@ -111,7 +111,7 @@ class imageSubscriber(Node):
             mask_clean, connectivity=8
         )
 
-        min_area = 1500  # Minimum area of object to keep
+        min_area = 500  # TUNE - Minimum area of object to keep
         filtered_mask = np.zeros_like(mask_clean)
         for i in range(1, num_labels):  # skip background (label 0)
             x, y, w, h, area = stats[i]
