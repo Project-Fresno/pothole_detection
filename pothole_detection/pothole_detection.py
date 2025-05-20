@@ -13,8 +13,8 @@ class imageSubscriber(Node):
 
         super().__init__("image_subscriber")
 
-        self.depth_image = np.zeros((480, 640), np.uint16)
-        self.lane_depth = np.zeros((480, 640), np.uint16)
+        self.depth_image = np.zeros((720, 1280), np.uint16)
+        self.lane_depth = np.zeros((720, 1280), np.uint16)
 
         self.color_sub = self.create_subscription(
             Image, "/camera/camera/color/image_raw", self.color_callback, 10
@@ -75,7 +75,7 @@ class imageSubscriber(Node):
     def depth_callback(self, data):
         self.get_logger().info("Receiving depth frame")
         self.depth_image = self.br.imgmsg_to_cv2(data, "passthrough")
-        # print(self.depth_image.shape)
+        print(self.depth_image.shape)
         # cv2.imshow("original depth",self.depth_image)
         # cv2.waitKey(1)
 
@@ -83,16 +83,16 @@ class imageSubscriber(Node):
         self.get_logger().info("Receiving color frame")
 
         self.color_image = self.br.imgmsg_to_cv2(data, "bgr8")
-        # print("color", self.color_image.shape)
+        print("color", self.color_image.shape)
 
         self.hsv = cv2.cvtColor(self.color_image, cv2.COLOR_BGR2HSV)
-        # print("hsv", self.hsv.shape)
+        print("hsv", self.hsv.shape)
 
         self.lower_white_hsv = (76, 70, 189)
         self.upper_white_hsv = (119, 95, 255)
 
         self.mask = cv2.inRange(self.hsv, self.lower_white_hsv, self.upper_white_hsv)
-        # print("mask1", self.mask.shape)
+        print("mask1", self.mask.shape)
 
         # self.masked = cv2.bitwise_and(self.hsv, self.hsv, mask=self.mask)
         # cv2.imshow("masked_image", self.masked)
@@ -119,6 +119,7 @@ class imageSubscriber(Node):
                 filtered_mask[labels == i] = 255
 
         self.out_binary = filtered_mask
+        print(self.out_binary.shape)
 
         # cv2.imshow("mask", self.out_binary)
         self.lane_depth = cv2.bitwise_and(
