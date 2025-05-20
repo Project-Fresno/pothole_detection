@@ -63,8 +63,8 @@ class imageSubscriber(Node):
         pothole_depth_image.header.stamp = time
         lane_depth_image.header.stamp = time
 
-        pothole_depth_image.header.frame_id = "camera_link"
-        lane_depth_image.header.frame_id = "camera_link"
+        pothole_depth_image.header.frame_id = "camera_depth_optical_frame"
+        lane_depth_image.header.frame_id = "camera_depth_optical_frame"
 
         self.camera_info.header.stamp = time
 
@@ -88,8 +88,8 @@ class imageSubscriber(Node):
         self.hsv = cv2.cvtColor(self.color_image, cv2.COLOR_BGR2HSV)
         # print("hsv", self.hsv.shape)
 
-        self.lower_white_hsv = (0, 0, 207)  # 0,0,200          0,0,168
-        self.upper_white_hsv = (179, 125, 255)  # 145,60,255       172,111,255
+        self.lower_white_hsv = (76, 70, 189)
+        self.upper_white_hsv = (119, 95, 255)
 
         self.mask = cv2.inRange(self.hsv, self.lower_white_hsv, self.upper_white_hsv)
         # print("mask1", self.mask.shape)
