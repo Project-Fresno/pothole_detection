@@ -1,5 +1,3 @@
-import os
-
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 
@@ -22,46 +20,25 @@ def generate_launch_description():
             #
             # launch plugin through rclcpp_components container
             launch_ros.actions.ComposableNodeContainer(
-                name='pothole',
-                namespace='',
-                package='rclcpp_components',
-                executable='component_container',
+                name="lane",
+                namespace="",
+                package="rclcpp_components",
+                executable="component_container",
                 composable_node_descriptions=[
                     # Driver itself
                     launch_ros.descriptions.ComposableNode(
-                        package='depth_image_proc',
-                        plugin='depth_image_proc::PointCloudXyzNode',
-                        name='point_cloud_pothole',
+                        package="depth_image_proc",
+                        plugin="depth_image_proc::PointCloudXyzNode",
+                        name="point_cloud_lane",
                         remappings=[
-                            ('image_rect', '/pothole_depth'),
-                            ('camera_info', '/cov_info'),
-                            ('image', '/camera/color/image_raw'),
-                            ('/points', '/pothole_points'),
+                            ("image_rect", "/lane_depth"),
+                            ("camera_info", "/cov_info"),
+                            ("image", "/camera/color/image_raw"),
+                            ("/points", "/lane_points"),
                         ],
                     ),
                 ],
-                output='screen',
-            ),
-            launch_ros.actions.ComposableNodeContainer(
-                name='lane',
-                namespace='',
-                package='rclcpp_components',
-                executable='component_container',
-                composable_node_descriptions=[
-                    # Driver itself
-                    launch_ros.descriptions.ComposableNode(
-                        package='depth_image_proc',
-                        plugin='depth_image_proc::PointCloudXyzNode',
-                        name='point_cloud_lane',
-                        remappings=[
-                            ('image_rect', '/lane_depth'),
-                            ('camera_info', '/cov_info'),
-                            ('image', '/camera/color/image_raw'),
-                            ('/points', '/lane_points'),
-                        ],
-                    ),
-                ],
-                output='screen',
+                output="screen",
             ),
             # rviz
             # launch_ros.actions.Node(
