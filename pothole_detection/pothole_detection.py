@@ -118,7 +118,17 @@ class imageSubscriber(Node):
             if area >= min_area:
                 filtered_mask[labels == i] = 255
 
-        self.out_binary = filtered_mask
+        # cv2.imshow("pre-thinning", filtered_mask)
+
+        # TRY WHEN USING POTHOLES TOO
+        # contours, _ = cv2.findContours(
+        #     filtered_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        # )
+        # skeleton = np.zeros_like(filtered_mask)
+        # cv2.drawContours(skeleton, contours, -1, 255, 1)
+
+        skeleton = cv2.ximgproc.thinning(filtered_mask)
+        self.out_binary = skeleton
         # print(self.out_binary.shape)
 
         # cv2.imshow("mask", self.out_binary)
