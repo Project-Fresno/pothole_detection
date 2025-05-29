@@ -46,7 +46,8 @@ while True:
     if key == 27:  # ESC to quit
         break
 
-print(f"HSV (low): {tuple(lower)}")
-print(f"HSV (high): {tuple(upper)}")
+print(f"{','.join(map(str, lower))},{','.join(map(str, upper))}")
+# print(f"HSV (low): {tuple(lower)}")
+# print(f"HSV (high): {tuple(upper)}")
 
 cv2.destroyAllWindows()
